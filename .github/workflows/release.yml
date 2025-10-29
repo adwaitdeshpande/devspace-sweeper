@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Package binary (tar.gz)
+        shell: bash
+        run: |
+          APP=devspace-sweeper
+          BIN=target/release/$APP
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            PLATFORM=macos
+          else
+            PLATFORM=linux
+          fi
+          mkdir -p dist
+          cp "$BIN" "dist/$APP-$PLATFORM"
+          tar -C dist -czf "$APP-$PLATFORM.tar.gz" "$APP-$PLATFORM"
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            devspace-sweeper-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

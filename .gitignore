@@ -1,0 +1,6 @@
+target/
+**/*.swp
+.DS_Store
+/.idea/
+/.vscode/
+report.md

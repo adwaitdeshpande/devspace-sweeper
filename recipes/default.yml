@@ -1,0 +1,33 @@
+rules:
+  - name: node_modules
+    description: NPM/Yarn/PNPM dependencies
+    globs: ["**/node_modules/**"]
+    safe_delete: true
+  - name: dist_build
+    description: Build outputs like dist or build
+    globs: ["**/dist/**", "**/build/**"]
+    safe_delete: true
+  - name: python_caches
+    description: Python __pycache__ and .pytest_cache
+    globs: ["**/__pycache__/**", "**/.pytest_cache/**"]
+    safe_delete: true
+  - name: venvs
+    description: Local virtual environments
+    globs: ["**/.venv/**", "**/venv/**", "**/env/**"]
+    safe_delete: false
+  - name: rust_target
+    description: Cargo target directory
+    globs: ["**/target/**"]
+    safe_delete: true
+  - name: swift_derived
+    description: Xcode DerivedData
+    globs: ["**/DerivedData/**"]
+    safe_delete: true
+  - name: coverage
+    description: Coverage artifacts
+    globs: ["**/coverage/**", "**/.nyc_output/**"]
+    safe_delete: true
+  - name: web_caches
+    description: Frontend bundler caches
+    globs: ["**/.parcel-cache/**", "**/.next/**", "**/.nuxt/**", "**/.vite/**"]
+    safe_delete: true
