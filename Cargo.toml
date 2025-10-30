@@ -1,6 +1,6 @@
 [package]
 name = "devspace-sweeper"
-version = "0.1.0"
+version = "0.1.5"
 edition = "2021"
 description = "Tiny cross-platform CLI that finds and safely cleans dev junk across projects"
 authors = ["DevSpace Sweeper Contributors"]
