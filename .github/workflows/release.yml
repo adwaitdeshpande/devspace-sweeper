@@ -5,6 +5,9 @@ on:
     tags:
       - "v*.*.*"
 
+permissions:
+  contents: write
+
 jobs:
   build-release:
     runs-on: ${{ matrix.os }}
@@ -44,10 +47,16 @@ jobs:
           cp "$BIN" "dist/$APP-$PLATFORM"
           tar -C dist -czf "$APP-$PLATFORM.tar.gz" "$APP-$PLATFORM"
 
-      - name: Upload Release Asset
+      - name: Upload build artifact (always)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-binaries
+          path: |
+            devspace-sweeper-*.tar.gz
+
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             devspace-sweeper-*.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN != '' && secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
