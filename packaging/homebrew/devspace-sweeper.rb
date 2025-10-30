@@ -1,7 +1,7 @@
 class DevspaceSweeper < Formula
   desc "Tiny cross-platform CLI that finds and safely cleans dev junk"
   homepage "https://github.com/adwaitdeshpande/devspace-sweeper"
-  version "0.1.0"
+  version "0.1.2"
 
   on_macos do
     url "https://github.com/adwaitdeshpande/devspace-sweeper/releases/download/v0.1.0/devspace-sweeper-macos.tar.gz"
