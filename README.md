@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# devspace-sweeper
-=======
 # DevSpace Sweeper
 
 A tiny cross-platform CLI that finds and safely cleans dev junk across your projects to reclaim disk space and speed up tools.
