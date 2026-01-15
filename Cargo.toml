@@ -1,6 +1,6 @@
 [package]
 name = "devspace-sweeper"
-version = "0.1.0"
+version = "0.1.5"
 edition = "2021"
 description = "Tiny cross-platform CLI that finds and safely cleans dev junk across projects"
 authors = ["DevSpace Sweeper Contributors"]
@@ -21,7 +21,7 @@ globset = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 chrono = { version = "0.4", features = ["clock"] }
-humansize = "2.1"
+humansize = "2.1" 
 thiserror = "1.0"
 
 [dev-dependencies]
