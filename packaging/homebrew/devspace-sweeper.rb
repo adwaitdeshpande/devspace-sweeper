@@ -1,15 +1,15 @@
 class DevspaceSweeper < Formula
   desc "Tiny cross-platform CLI that finds and safely cleans dev junk"
   homepage "https://github.com/adwaitdeshpande/devspace-sweeper"
-  version "0.1.2"
+  version "0.1.5"
 
   on_macos do
-    url "https://github.com/adwaitdeshpande/devspace-sweeper/releases/download/v0.1.2/devspace-sweeper-macos.tar.gz"
+    url "https://github.com/adwaitdeshpande/devspace-sweeper/releases/download/v0.1.5/devspace-sweeper-macos.tar.gz"
     sha256 "REPLACE_WITH_MACOS_TARBALL_SHA256"
   end
 
   on_linux do
-    url "https://github.com/adwaitdeshpande/devspace-sweeper/releases/download/v0.1.2/devspace-sweeper-linux.tar.gz"
+    url "https://github.com/adwaitdeshpande/devspace-sweeper/releases/download/v0.1.5/devspace-sweeper-linux.tar.gz"
     sha256 "REPLACE_WITH_LINUX_TARBALL_SHA256"
   end
 

@@ -25,7 +25,7 @@ pub fn run_scan(path: Option<PathBuf>, recipes_path: Option<PathBuf>, max_depth:
 	let recipes = RecipeFile::load(recipes_path)?;
 	let globset = recipes.compile_globset()?;
 
-	let (agg, total) = scan_dir(&root, &globset, max_depth)?;
+	let (agg, total) = scan_dir(&root, &globset, max_depth, &recipes)?;
 	println!("Scanning {}", root.display());
 	println!("Found total {} across {} matched groups", format_size(total, DECIMAL), agg.len());
 	for (pattern_group, summary) in agg {
@@ -41,7 +41,7 @@ pub fn run_suggest(path: Option<PathBuf>, recipes_path: Option<PathBuf>) -> Resu
 	let root = path.unwrap_or(std::env::current_dir()?);
 	let recipes = RecipeFile::load(recipes_path)?;
 	let globset = recipes.compile_globset()?;
-	let (agg, _total) = scan_dir(&root, &globset, 8)?;
+	let (agg, _total) = scan_dir(&root, &globset, 8, &recipes)?;
 
 	println!("Suggestions for {}", root.display());
 	let mut ranked: Vec<(String, RuleAggregate)> = agg.into_iter().collect();
@@ -67,11 +67,11 @@ pub fn run_suggest(path: Option<PathBuf>, recipes_path: Option<PathBuf>) -> Resu
 	Ok(())
 }
 
-pub fn run_gen_ignore(path: Option<PathBuf>, recipes_path: Option<PathBuf>, dry_run: bool) -> Result<()> {
+pub fn run_gen_ignore(path: Option<PathBuf>, recipes_path: Option<PathBuf>, dry_run: Option<bool>) -> Result<()> {
 	let root = path.unwrap_or(std::env::current_dir()?);
 	let recipes = RecipeFile::load(recipes_path)?;
 	let globset = recipes.compile_globset()?;
-	let (agg, _total) = scan_dir(&root, &globset, 8)?;
+	let (agg, _total) = scan_dir(&root, &globset, 8, &recipes)?;
 
 	let mut ranked: Vec<(String, RuleAggregate)> = agg.into_iter().collect();
 	ranked.sort_by_key(|(_, v)| std::cmp::Reverse(v.total_bytes));
@@ -86,7 +86,8 @@ pub fn run_gen_ignore(path: Option<PathBuf>, recipes_path: Option<PathBuf>, dry_
 		return Ok(());
 	}
 	let gi_path = root.join(".gitignore");
-	if dry_run {
+	let dry = dry_run.unwrap_or(false);
+	if dry {
 		println!("Would append to {}:\n", gi_path.display());
 		for h in &hints { println!("{}", h); }
 		return Ok(());
@@ -132,7 +133,7 @@ fn gitignore_hint_for_group(group: &str) -> Option<String> {
 	}
 }
 
-fn scan_dir(root: &Path, globset: &globset::GlobSet, max_depth: usize) -> Result<(BTreeMap<String, RuleAggregate>, u64)> {
+fn scan_dir(root: &Path, globset: &globset::GlobSet, max_depth: usize, recipes: &RecipeFile) -> Result<(BTreeMap<String, RuleAggregate>, u64)> {
 	let mut totals: BTreeMap<String, RuleAggregate> = BTreeMap::new();
 	let mut seen_dirs: HashSet<PathBuf> = HashSet::new();
 	let mut total_bytes: u64 = 0;
@@ -156,7 +157,7 @@ fn scan_dir(root: &Path, globset: &globset::GlobSet, max_depth: usize) -> Result
 			seen_dirs.insert(path.to_path_buf());
 			size = dir_size(path)?;
 		}
-		let group_key = group_from_path(rel);
+		let group_key = group_from_globs(rel, recipes);
 		let entry = totals.entry(group_key).or_default();
 		entry.total_bytes = entry.total_bytes.saturating_add(size);
 		entry.count += 1;
@@ -164,6 +165,27 @@ fn scan_dir(root: &Path, globset: &globset::GlobSet, max_depth: usize) -> Result
 		total_bytes = total_bytes.saturating_add(size);
 	}
 	Ok((totals, total_bytes))
+}
+
+fn group_from_globs(path: &Path, recipes: &RecipeFile) -> String {
+	let rel_str = path.to_string_lossy();
+	// Try to find a sensible token from the recipe globs (e.g., node_modules, target, __pycache__)
+	for rule in &recipes.rules {
+		for g in &rule.globs {
+			// split the glob into components and pick the first non-wildcard segment
+			for seg in g.split('/') {
+				let seg = seg.trim();
+				if seg.is_empty() { continue; }
+				if seg.contains('*') || seg.contains('?') || seg.contains('[') { continue; }
+				// Found a literal segment; check if the path contains it
+				if rel_str.contains(seg) {
+					return seg.to_string();
+				}
+			}
+		}
+	}
+	// Fallback to original behavior (last path component)
+	group_from_path(path)
 }
 
 fn group_from_path(path: &Path) -> String {
