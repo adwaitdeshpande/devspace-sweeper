@@ -62,8 +62,8 @@ pub enum Commands {
 		path: Option<PathBuf>,
 		#[arg(short = 'r', long = "recipes")]
 		recipes: Option<PathBuf>,
-		/// Preview changes without writing
-		#[arg(long, default_value_t = false)]
-		dry_run: bool,
+		/// Preview changes without writing (accepts true/false or a flag)
+		#[arg(long, value_parser = clap::builder::BoolishValueParser::new())]
+		dry_run: Option<bool>,
 	},
 }
