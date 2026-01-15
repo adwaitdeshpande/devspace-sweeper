@@ -1,62 +1,103 @@
-name: Release
+name: Publish Release Artifacts
 
 on:
   push:
     tags:
-      - "v*.*.*"
-
-permissions:
-  contents: write
+      - 'v*.*.*'  # trigger on semantic version tags like v1.2.3
 
 jobs:
-  build-release:
-    runs-on: ${{ matrix.os }}
+  release:
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+          - x86_64-pc-windows-msvc
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          profile: minimal
+          components: clippy, rustfmt
           override: true
 
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose
+
+      - name: Add target for cross builds (if needed)
+        if: matrix.target != 'x86_64-apple-darwin' && matrix.target != 'aarch64-apple-darwin'
+        run: rustup target add ${{ matrix.target }}
 
       - name: Build release
-        run: cargo build --release
-
-      - name: Package binary (tar.gz)
-        shell: bash
+        env:
+          CARGO_HOME: ${{ runner.temp }}/cargo
         run: |
-          APP=devspace-sweeper
-          BIN=target/release/$APP
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            PLATFORM=macos
-          else
-            PLATFORM=linux
-          fi
-          mkdir -p dist
-          cp "$BIN" "dist/$APP-$PLATFORM"
-          tar -C dist -czf "$APP-$PLATFORM.tar.gz" "$APP-$PLATFORM"
+          set -e
+          rustup target list --installed || true
+          # Build release for the target
+          cargo build --release --target "${{ matrix.target }}"
 
-      - name: Upload build artifact (always)
+      - name: Package binary
+        run: |
+          set -e
+          TAG=${GITHUB_REF##*/}
+          VERSION=${TAG#v}
+          OUTDIR=release-artifacts/${{ matrix.target }}
+          mkdir -p "$OUTDIR"
+          case "${{ matrix.target }}" in
+            *windows*)
+              BIN_PATH=target/${{ matrix.target }}/release/devspace-sweeper.exe
+              ARCHIVE_NAME=devspace-sweeper-${VERSION}-${{ matrix.target }}.zip
+              cp "$BIN_PATH" "$OUTDIR/"
+              cp README.md LICENSE "$OUTDIR/" || true
+              (cd "$OUTDIR" && zip -r "../${ARCHIVE_NAME}" .)
+              ;;
+            *)
+              BIN_PATH=target/${{ matrix.target }}/release/devspace-sweeper
+              ARCHIVE_NAME=devspace-sweeper-${VERSION}-${{ matrix.target }}.tar.gz
+              cp "$BIN_PATH" "$OUTDIR/"
+              cp README.md LICENSE "$OUTDIR/" || true
+              (cd "$OUTDIR" && tar -czf "../${ARCHIVE_NAME}" .)
+              ;;
+          esac
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}-binaries
-          path: |
-            devspace-sweeper-*.tar.gz
+          name: release-${{ matrix.target }}
+          path: release-artifacts/${{ matrix.target }}/..
 
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
+  publish-release:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          files: |
-            devspace-sweeper-*.tar.gz
-          token: ${{ secrets.RELEASE_TOKEN != '' && secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          path: artifacts
+
+      - name: Create Release (if not exists) and upload assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/*.tar.gz, artifacts/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
