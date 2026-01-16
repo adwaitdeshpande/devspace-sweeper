@@ -4,6 +4,10 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+// Embed the default recipes so the installed binary works even when the
+// `recipes/default.yml` file isn't present on the user's current working dir.
+const DEFAULT_RECIPES: &str = include_str!("../recipes/default.yml");
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecipeFile {
 	pub rules: Vec<Rule>,
@@ -24,15 +28,30 @@ fn default_true() -> bool { true }
 
 impl RecipeFile {
 	pub fn load(path: Option<PathBuf>) -> Result<Self> {
-		let path = match path {
-			Some(p) => p,
-			None => default_recipes_path(),
-		};
-		let content = fs::read_to_string(&path)
-			.with_context(|| format!("Failed to read recipes at {}", path.display()))?;
-		let rf: RecipeFile = serde_yaml::from_str(&content)
-			.with_context(|| format!("Failed to parse YAML recipes at {}", path.display()))?;
-		Ok(rf)
+		match path {
+			Some(p) => {
+				let content = fs::read_to_string(&p)
+					.with_context(|| format!("Failed to read recipes at {}", p.display()))?;
+				let rf: RecipeFile = serde_yaml::from_str(&content)
+					.with_context(|| format!("Failed to parse YAML recipes at {}", p.display()))?;
+				Ok(rf)
+			}
+			None => {
+				let local = default_recipes_path();
+				if local.exists() {
+					let content = fs::read_to_string(&local)
+						.with_context(|| format!("Failed to read recipes at {}", local.display()))?;
+					let rf: RecipeFile = serde_yaml::from_str(&content)
+						.with_context(|| format!("Failed to parse YAML recipes at {}", local.display()))?;
+					Ok(rf)
+				} else {
+					// Fallback to embedded default recipes compiled into the binary
+					let rf: RecipeFile = serde_yaml::from_str(DEFAULT_RECIPES)
+						.with_context(|| "Failed to parse embedded default recipes")?;
+					Ok(rf)
+				}
+			}
+		}
 	}
 
 	pub fn compile_globset(&self) -> Result<GlobSet> {
