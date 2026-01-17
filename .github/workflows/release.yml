@@ -7,15 +7,20 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        target:
-          - x86_64-unknown-linux-gnu
-          - aarch64-unknown-linux-gnu
-          - x86_64-apple-darwin
-          - aarch64-apple-darwin
-          - x86_64-pc-windows-msvc
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-latest
+          - target: x86_64-apple-darwin
+            runner: macos-latest
+          - target: aarch64-apple-darwin
+            runner: macos-latest
+          - target: x86_64-pc-windows-msvc
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - uses: actions/checkout@v4
@@ -34,8 +39,10 @@ jobs:
           args: --verbose
 
       - name: Add target for cross builds (if needed)
-        if: matrix.target != 'x86_64-apple-darwin' && matrix.target != 'aarch64-apple-darwin'
-        run: rustup target add ${{ matrix.target }}
+        run: |
+          rustup target list --installed || true
+          # Add the target toolchain if missing; for native runners this is harmless.
+          rustup target add ${{ matrix.target }} || true
 
       - name: Build release
         env:
