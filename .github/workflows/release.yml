@@ -73,7 +73,8 @@ jobs:
               ARCHIVE_NAME=devspace-sweeper-${VERSION}-${{ matrix.target }}.tar.gz
               cp "$BIN_PATH" "$OUTDIR/"
               cp README.md LICENSE "$OUTDIR/" || true
-              (cd "$OUTDIR" && tar -czf "${ARCHIVE_NAME}" .)
+              # Avoid failing if files change during archiving
+              (cd "$OUTDIR" && tar --warning=no-file-changed -czf "${ARCHIVE_NAME}" .)
               ;;
           esac
 
