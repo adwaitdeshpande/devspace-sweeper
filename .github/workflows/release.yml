@@ -66,14 +66,14 @@ jobs:
               ARCHIVE_NAME=devspace-sweeper-${VERSION}-${{ matrix.target }}.zip
               cp "$BIN_PATH" "$OUTDIR/"
               cp README.md LICENSE "$OUTDIR/" || true
-              (cd "$OUTDIR" && zip -r "../${ARCHIVE_NAME}" .)
+              (cd "$OUTDIR" && zip -r "${ARCHIVE_NAME}" .)
               ;;
             *)
               BIN_PATH=target/${{ matrix.target }}/release/devspace-sweeper
               ARCHIVE_NAME=devspace-sweeper-${VERSION}-${{ matrix.target }}.tar.gz
               cp "$BIN_PATH" "$OUTDIR/"
               cp README.md LICENSE "$OUTDIR/" || true
-              (cd "$OUTDIR" && tar -czf "../${ARCHIVE_NAME}" .)
+              (cd "$OUTDIR" && tar -czf "${ARCHIVE_NAME}" .)
               ;;
           esac
 
@@ -81,7 +81,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.target }}
-          path: release-artifacts/${{ matrix.target }}/..
+          path: release-artifacts/${{ matrix.target }}
 
   publish-release:
     needs: release
