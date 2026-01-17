@@ -7,6 +7,7 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct MatchInfo {
 	pub path: PathBuf,
@@ -96,7 +97,8 @@ pub fn run_gen_ignore(path: Option<PathBuf>, recipes_path: Option<PathBuf>, dry_
 		fs::OpenOptions::new().append(true).open(&gi_path)
 			.with_context(|| format!("Failed to open {}", gi_path.display()))?
 	} else {
-		fs::OpenOptions::new().create(true).write(true).open(&gi_path)
+		// Explicitly set truncate(false) so behavior is clear to clippy/lints
+		fs::OpenOptions::new().create(true).write(true).truncate(false).open(&gi_path)
 			.with_context(|| format!("Failed to create {}", gi_path.display()))?
 	};
 	writeln!(file, "\n# Added by devspace-sweeper")?;

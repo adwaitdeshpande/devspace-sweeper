@@ -4,7 +4,7 @@ use humansize::{format_size, DECIMAL};
 use ignore::WalkBuilder;
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub fn run_report(path: Option<PathBuf>, recipes_path: Option<PathBuf>, output: Option<PathBuf>) -> Result<()> {
 	let root = path.unwrap_or(std::env::current_dir()?);
@@ -13,7 +13,7 @@ pub fn run_report(path: Option<PathBuf>, recipes_path: Option<PathBuf>, output: 
 	let out = output.unwrap_or_else(|| PathBuf::from("report.md"));
 
 	let mut lines: Vec<String> = Vec::new();
-	lines.push(format!("# DevSpace Sweeper Report"));
+	lines.push("# DevSpace Sweeper Report".to_string());
 	lines.push(format!("Root: {}\n", root.display()));
 	let mut total = 0u64;
 
@@ -34,7 +34,8 @@ pub fn run_report(path: Option<PathBuf>, recipes_path: Option<PathBuf>, output: 
 	Ok(())
 }
 
-pub fn compute_ignore_hints(root: &PathBuf, patterns: &[&str]) -> HashMap<String, usize> {
+#[allow(dead_code)]
+pub fn compute_ignore_hints(_root: &Path, patterns: &[&str]) -> HashMap<String, usize> {
 	let mut hints: HashMap<String, usize> = HashMap::new();
 	for p in patterns {
 		*hints.entry((*p).to_string()).or_insert(0) += 1;

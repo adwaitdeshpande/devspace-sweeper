@@ -1,4 +1,5 @@
 use assert_cmd::Command;
+use assert_cmd::cargo::cargo_bin_cmd;
 use predicates::prelude::*;
 use std::fs;
 use std::path::PathBuf;
@@ -20,7 +21,7 @@ fn create_fixture() -> (TempDir, PathBuf) {
 #[test]
 fn scan_should_list_groups() {
 	let (_td, root) = create_fixture();
-	let mut cmd = Command::cargo_bin("devspace-sweeper").unwrap();
+	let mut cmd = cargo_bin_cmd!("devspace-sweeper");
 	cmd.arg("scan").arg("--path").arg(root);
 	cmd.assert()
 		.success()
@@ -32,7 +33,7 @@ fn scan_should_list_groups() {
 #[test]
 fn suggest_should_print_hints_and_safety() {
 	let (_td, root) = create_fixture();
-	let mut cmd = Command::cargo_bin("devspace-sweeper").unwrap();
+	let mut cmd = cargo_bin_cmd!("devspace-sweeper");
 	cmd.arg("suggest").arg("--path").arg(root);
 	cmd.assert()
 		.success()
@@ -43,7 +44,7 @@ fn suggest_should_print_hints_and_safety() {
 #[test]
 fn gen_ignore_dry_run_should_output_patterns() {
 	let (_td, root) = create_fixture();
-	let mut cmd = Command::cargo_bin("devspace-sweeper").unwrap();
+	let mut cmd = cargo_bin_cmd!("devspace-sweeper");
 	cmd.arg("gen-ignore").arg("--path").arg(&root).arg("--dry-run").arg("true");
 	cmd.assert()
 		.success()
