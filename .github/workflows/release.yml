@@ -64,6 +64,10 @@ jobs:
             *windows*)
               BIN_PATH=target/${{ matrix.target }}/release/devspace-sweeper.exe
               ARCHIVE_NAME=devspace-sweeper-${VERSION}-${{ matrix.target }}.zip
+              if [ ! -f "$BIN_PATH" ]; then
+                echo "Error: build artifact not found: $BIN_PATH" >&2
+                exit 1
+              fi
               cp "$BIN_PATH" "$OUTDIR/"
               cp README.md LICENSE "$OUTDIR/" || true
               (cd "$OUTDIR" && zip -r "${ARCHIVE_NAME}" .)
@@ -71,6 +75,10 @@ jobs:
             *)
               BIN_PATH=target/${{ matrix.target }}/release/devspace-sweeper
               ARCHIVE_NAME=devspace-sweeper-${VERSION}-${{ matrix.target }}.tar.gz
+              if [ ! -f "$BIN_PATH" ]; then
+                echo "Error: build artifact not found: $BIN_PATH" >&2
+                exit 1
+              fi
               cp "$BIN_PATH" "$OUTDIR/"
               cp README.md LICENSE "$OUTDIR/" || true
               # Avoid failing if files change during archiving
